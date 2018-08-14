@@ -64,20 +64,47 @@ namespace AWS.Logger.AspNetCore
         /// <param name="formatter"></param>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            StringBuilder formattedMessage = null;
             if (!IsEnabled(logLevel))
             {
                 return;
             }
+
             var message = _customFormatter != null ? _customFormatter(logLevel, state, exception) : formatter(state, exception);
+
+            AddMessage(message, exception);
+        }
+
+        /// <summary>
+        /// Log the message
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="logLevel"></param>
+        /// <param name="eventId"></param>
+        /// <param name="state"></param>
+        /// <param name="exception"></param>
+        /// <param name="formatter"></param>
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, EventId, Exception, string> formatter)
+        {
+            if (!IsEnabled(logLevel))
+            {
+                return;
+            }
+
+            var message = _customFormatter != null ? _customFormatter(logLevel, state, exception) : formatter(state, eventId, exception);
+            AddMessage(message, exception);
+        }
+
+        private void AddMessage(string message, Exception exception)
+        {
+            StringBuilder formattedMessage = null;
             formattedMessage = new StringBuilder();
             formattedMessage.AppendLine(message);
-            if (exception != null && _customFormatter==null)
+            if (exception != null && _customFormatter == null)
             {
                 formattedMessage.AppendLine(exception.ToString());
             }
-            _core.AddMessage(formattedMessage.ToString());
 
+            _core.AddMessage(formattedMessage.ToString());
         }
 
         private class DisposableScope : IDisposable
